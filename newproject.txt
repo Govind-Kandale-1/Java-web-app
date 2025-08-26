@@ -1,0 +1,19 @@
+this is a new simple java project
+
+
+simple-java-app/
+├── pom.xml
+├── src/
+│   └── main/
+│       ├── java/
+│       │   └── com/
+│       │       └── example/
+│       │           ├── SimpleApplication.java
+│       │           └── ApiController.java
+│       └── resources/
+│           ├── static/
+│           │   ├── index.html
+│           │   └── app.js
+│           └── application.properties
+├── Dockerfile
+└── docker-compose.yml
