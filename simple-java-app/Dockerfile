@@ -1,17 +1,28 @@
-FROM openjdk:17-jdk-slim
-
+# Stage 1 — build
+FROM maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /app
 
-# Copy Maven files
+# Cache dependencies separately from source
 COPY pom.xml .
+RUN mvn dependency:go-offline -B -q
+
 COPY src ./src
+RUN mvn clean package -DskipTests -B -q
 
-# Install Maven
-RUN apt-get update && apt-get install -y maven
+# Stage 2 — runtime (slim JRE, no Maven, no source)
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
 
-# Build the application
-RUN mvn clean package -DskipTests
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Run the application
+COPY --from=builder /app/target/simple-java-app-1.0.0.jar app.jar
+
+RUN chown appuser:appgroup app.jar
+USER appuser
+
 EXPOSE 8080
-CMD ["java", "-jar", "target/simple-java-app-1.0.0.jar"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -qO- http://localhost:8080/api/health || exit 1
+
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
